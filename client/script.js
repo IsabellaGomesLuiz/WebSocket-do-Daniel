@@ -7,7 +7,7 @@ const messages = document.getElementById('messages');
 const userList = document.getElementById('user-list');
 let username;
 
-// Evento para entrar no chat
+//entrar no chat
 enterButton.addEventListener('click', () => {
     username = usernameInput.value;
     if (username) {
@@ -59,7 +59,7 @@ socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
 
     if (message.type === 'history') {
-        // Exibir o histórico de mensagens
+        //histórico de mensagens
         message.messages.forEach(msg => {
             const li = document.createElement('li');
             li.textContent = msg;
