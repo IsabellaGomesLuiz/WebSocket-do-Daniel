@@ -15,34 +15,30 @@ function loadMessageHistory() {
     return [];
 }
 
-//salvar histórico de mensagens
 function saveMessageHistory(history) {
     fs.writeFileSync(historyFilePath, JSON.stringify(history, null, 2), 'utf-8');
 }
 
-//Carregar histórico de mensagens
 let messageHistory = loadMessageHistory();
 
 const server = http.createServer((req, res) => {
-    let filePath = '';
-
+    let path = '';
     if (req.url === '/') {
-        filePath = path.join(__dirname, 'client', 'index.html');
-    } else if (req.url === '/script.js') {
-        filePath = path.join(__dirname, 'client', 'script.js');
+        path = '/client/index.html';
+    } else if (req.url === '/client/script.js') {
+        path = '/client/script.js';
     } else {
         res.writeHead(404);
         res.end('Not Found');
         return;
     }
 
-    fs.readFile(filePath, (err, data) => {
+    fs.readFile(__dirname + path, (err, data) => {
         if (err) {
             res.writeHead(500);
             res.end('Error loading file');
         } else {
-            const contentType = req.url.endsWith('.js') ? 'application/javascript' : 'text/html';
-            res.writeHead(200, { 'Content-Type': contentType });
+            res.writeHead(200);
             res.end(data);
         }
     });
@@ -59,7 +55,6 @@ wss.on('connection', (ws) => {
     console.log('Novo cliente conectado');
     clients.set(ws, { username: null });
 
-    //Mostrar histórico para cliente novo
     ws.send(JSON.stringify({ type: 'history', messages: messageHistory }));
 
     ws.on('message', (data) => {
@@ -76,6 +71,8 @@ wss.on('connection', (ws) => {
             saveMessageHistory(messageHistory);
         } else if (message.type === 'private') {
             sendPrivateMessage(message.target, message.content, ws);
+        } else if (message.type === 'typing') {
+            broadcastTypingStatus(message.username);
         }
     });
 
@@ -95,7 +92,6 @@ function broadcastMessage(content, exclude) {
     });
 }
 
-//lista de usuários conectados
 function broadcastUserList() {
     const users = Array.from(clients.values()).map(user => user.username).filter(Boolean);
     const userListMessage = JSON.stringify({ type: 'userlist', users });
@@ -107,7 +103,15 @@ function broadcastUserList() {
     });
 }
 
-//mensagem privada
+function broadcastTypingStatus(username) {
+    const typingMessage = JSON.stringify({ type: 'typing', content: `${username} está digitando...` });
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(typingMessage);
+        }
+    });
+}
+
 function sendPrivateMessage(targetUsername, content, senderWs) {
     const recipient = Array.from(clients.entries()).find(
         ([ws, user]) => user.username === targetUsername
@@ -121,7 +125,7 @@ function sendPrivateMessage(targetUsername, content, senderWs) {
     } else {
         senderWs.send(JSON.stringify({
             type: 'message',
-            content: `User ${targetUsername} não encontrado.`
+            content: `Usuário ${targetUsername} não encontrado.`
         }));
     }
 }

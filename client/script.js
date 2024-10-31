@@ -7,7 +7,7 @@ const messages = document.getElementById('messages');
 const userList = document.getElementById('user-list');
 let username;
 
-//entrar no chat
+// Evento para entrar no chat
 enterButton.addEventListener('click', () => {
     username = usernameInput.value;
     if (username) {
@@ -17,7 +17,7 @@ enterButton.addEventListener('click', () => {
         messageInput.style.display = 'inline-block';
         sendButton.style.display = 'inline-block';
     } else {
-        alert('Por favor, digite um username.');
+        alert('Por favor, digite um nome de usuário.');
     }
 });
 
@@ -59,7 +59,7 @@ socket.onmessage = (event) => {
     const message = JSON.parse(event.data);
 
     if (message.type === 'history') {
-        //histórico de mensagens
+        // Exibir o histórico de mensagens
         message.messages.forEach(msg => {
             const li = document.createElement('li');
             li.textContent = msg;
